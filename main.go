@@ -1,0 +1,126 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"time"
+	"math"
+	"strconv"
+	"github.com/fogleman/gg"
+	"os/exec"
+)
+
+const (
+	Width = 1080
+	Height = 1080
+)
+
+var (
+	canvas *gg.Context
+)
+
+func main() {
+	//create a new canvas
+	canvas = gg.NewContext(Width, Height)
+	fmt.Printf("Canvas created successfully\n")
+	canvas.SetRGB(1, 1, 1) //white background
+	canvas.Clear()
+        
+        openImage := func() {
+		canvas.SavePNG("clock.png")
+		exec.Command("feh", "clock.png").Start()
+	}
+
+        // Main loop
+        for {
+            canvas.Clear()
+            drawClock(canvas)
+            openImage()
+            time.Sleep(time.Minute / 60) // Update every second
+            }
+}
+
+func drawClock(ctx *gg.Context) {
+        
+	//set background color:
+	ctx.SetRGB(1, 1, 1) //white background
+        ctx.Fill()
+
+	//set text color
+	ctx.SetRGB(0, 0, 0) //back text
+
+	//set fontface
+	//ctx.SetFontFace(gg.LoadFontFace("sans-serif.ttf", 24))
+
+	//draw center circle
+	ctx.SetLineWidth(2)
+	fmt.Printf("Drawing center circle\n")
+	ctx.DrawCircle(Width/2, Height/2, 500)
+
+	
+	//draw hour hand
+	
+
+
+	//draw Hour Hand
+	fmt.Printf("Drawing minute hand\n")
+	ctx.SetLineWidth(6)
+	ctx.SetRGB(1, 0, 0) //red hour hand
+	ctx.Push()
+	ctx.Translate(Width/2, Height/2)
+	ctx.Rotate(float64(-90)*hour())
+	ctx.DrawLine(-50, 0, 50, 0)
+	ctx.Pop()
+
+	// Draw minute hand
+        ctx.SetLineWidth(4)
+	ctx.SetRGB(0, 1, 0) //green minute hand
+        ctx.Push()
+        ctx.Translate(Width/2, Height/2)
+        ctx.Rotate(float64(-90)*minute())
+        ctx.DrawLine(-40, 1, 40, 1)
+        ctx.Pop()
+
+        // Draw second hand
+        ctx.SetLineWidth(2)
+	ctx.SetRGB(0, 0, 1) // blue second hand
+        ctx.Push()
+        ctx.Translate(Width/2, Height/2)
+        ctx.Rotate(float64(-90)*second())
+        ctx.DrawLine(-20, 0, 20, 0)
+        ctx.Pop()
+
+	fmt.Printf("finished drawing clock\n")
+
+	//add numbers
+	ctx.SetRGB(0, 0, 0) //black text for numbers
+	fontFace, err := gg.LoadFontFace("sans-serif.ttf", 24)
+	if err != nil {
+		//fmt.Println("Fatal:", err)
+		log.Fatal(err)
+	}
+	ctx.SetFontFace(fontFace)
+	//ctx.SetFontFace(gg.LoadFontFace("Arial", 24))
+	for i := 1; i <= 12; i++ {
+		angle := float64(i*30)
+		x := float64(Width / 2 + 80*math.Sin(math.Pi*angle/180))
+		y := float64(Height / 2 - 80*math.Cos(math.Pi*angle/180))
+		ctx.DrawString(strconv.Itoa(i), x, y)
+	}
+}
+
+//helper function to calculate angles
+func hour() float64 {
+	t := time.Now().Local()
+	return float64(t.Hour()) + float64(t.Minute())/60
+}
+
+func minute() float64 {
+	t := time.Now().Local()
+	return float64(t.Minute()) + float64(t.Second())/60
+}
+
+func second() float64 {
+	t := time.Now().Local()
+	return float64(t.Second())
+}
